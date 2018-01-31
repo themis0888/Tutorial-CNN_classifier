@@ -1,0 +1,9 @@
+[submodule "tutorials"]
+	path = tutorials
+	url = https://github.com/pytorch/tutorials.git
+[submodule "torch-tutorial/torch-tutorial/tutorials"]
+	path = torch-tutorial/torch-tutorial/tutorials
+	url = https://github.com/pytorch/tutorials.git
+[submodule "torch-tutorial/tutorials"]
+	path = torch-tutorial/tutorials
+	url = https://github.com/pytorch/tutorials.git
