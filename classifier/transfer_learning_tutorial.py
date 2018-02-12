@@ -25,22 +25,24 @@ parser = argparse.ArgumentParser(description='Hello World? :D')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 args = parser.parse_args()
 
+print('Hello! :D')
+
 data_transforms = {
     'train': transforms.Compose([
-        transforms.RandomSizedCrop(224),
+        transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
     'val': transforms.Compose([
-        transforms.Scale(256),
+        transforms.Resize(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
 }
 
-data_dir = '/data/private/catdog/'
+data_dir = '/data/private/testing/'
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) 
@@ -52,6 +54,8 @@ dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=128,
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 class_names = image_datasets['train'].classes
 
+
+print('Dataset Loaded')
 use_gpu = torch.cuda.is_available()
 
 
@@ -223,23 +227,3 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=50, gamma=0.3)
 model_conv = train_model(model_conv, criterion, optimizer_conv,
                          exp_lr_scheduler, num_epochs=300, starting = start_epoch)
 
-
-######################################################################
-# Train and evaluate
-# ^^^^^^^^^^^^^^^^^^
-#
-# On CPU this will take about half the time compared to previous scenario.
-# This is expected as gradients don't need to be computed for most of the
-# network. However, forward does need to be computed.
-#
-
-
-
-######################################################################
-#
-"""
-visualize_model(model_conv)
-
-plt.ioff()
-plt.show()
-"""
