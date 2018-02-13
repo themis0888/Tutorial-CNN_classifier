@@ -41,6 +41,8 @@ def img_size_type(fname, src_dir, dest_dir):
     from draco'''
     im = Image.open(src_dir + fname)
     im.load()
+    # This code convert readible image to jpeg format. 
+    # Which means you don't need to check the file type.  
     im.convert('RGB').save(dest_dir + fname + '.jpg', 'JPEG')
     return im.size, im.format
 
@@ -52,9 +54,11 @@ if len(sys.argv) == 1 or sys.argv[1] == 'clean':
     # num_file = 10000
     base_dir = '/data/private'
     source_dir = '/clean_data/'
-    data_dir = '/learn'
+    data_dir = '/learn10'
     # 'ADULT', 'AD', 'ILLEGALITY', 'NORMAL', 'SEMI_ADULT', 'HATRED'
-    class_lst = ['AD', 'ILLEGALITY']
+    class_lst = ['ADULT', 'AD', 'ILLEGALITY', 'NORMAL', 'SEMI_ADULT', 'HATRED']
+    # train set - validation set ratio 
+    tv_ratio = 4/5
 
 
 elif sys.argv[1] == 'catdog':
@@ -68,9 +72,8 @@ elif sys.argv[1] == 'catdog':
 print('From \t %s' % (base_dir + source_dir))
 print('To \t %s' % (base_dir + data_dir))
 
-# make the dataset directory 
-# If something goes wrong, do 're -r *' at the /learn/ dir and go through this again
 
+# 
 for i in class_lst:
     # remove current dataset
     if os.path.isdir(base_dir + data_dir + '/train/' + i):
@@ -95,16 +98,17 @@ for j in class_lst:
     dir_lst = os.listdir(base_dir + source_dir + j + '/')
     # random.shuffle(dir_lst)
     # num_file = 50 
-    num_file = len(dir_lst)
+    num_file = len(dir_lst) // 10
 
-    for name in dir_lst[:num_file // 2]:
+    for name in dir_lst[:round(num_file * tv_ratio)]:
 
         try:
             image_size, img_format = img_size_type(name, 
                 base_dir + source_dir + j + '/',
                 base_dir + data_dir + '/train/' + j + '/')
         except IOError:
-            # print('excepted', end = ' ')
+            continue
+        except ValueError:
             continue
         else:
             # Pass when the file type isn't supported by PIL 
@@ -115,14 +119,15 @@ for j in class_lst:
 
 
 
-    for name in dir_lst[num_file // 2 + 1 : num_file]:
+    for name in dir_lst[round(num_file * tv_ratio) + 1 : num_file]:
         
         try:
             image_size, img_format = img_size_type(name, 
                 base_dir + source_dir + j + '/',
                 base_dir + data_dir + '/val/' + j + '/')
         except IOError:
-            # print('excepted', end = ' ')
+            continue
+        except ValueError:
             continue
         else:
             # Pass when the file type isn't supported by PIL 
@@ -130,10 +135,4 @@ for j in class_lst:
             if (not ((256 < image_size[0]) and (256 < image_size[1]))):
                 continue 
         print('Working on \tval\t ' + j)  
-
-
-
-
-
-
 

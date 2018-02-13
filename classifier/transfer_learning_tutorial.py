@@ -42,7 +42,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/learn/'
+data_dir = '/data/private/hymen_test/'
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) 
@@ -185,6 +185,8 @@ model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
 
 # Set the number of classes 
 num_class = sum(os.path.isdir(data_dir + '/train/' + i) for i in os.listdir(data_dir + '/train'))
+cnn_model = ['resnet50', 'vgg19_bn']
+idx = 0
 
 if args.resume:
     # Load checkpoint
@@ -201,7 +203,9 @@ if args.resume:
     start_epoch = checkpoint['epoch']
 
 else:
-    model_conv = torchvision.models.resnet50(pretrained=True)
+
+    print("Model : %s" % cnn_model[idx])
+    exec('model_conv = torchvision.models.' + cnn_model[idx] + '(pretrained=True)')
 
     for param in model_conv.parameters():
         param.requires_grad = False
