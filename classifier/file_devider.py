@@ -36,12 +36,13 @@ from os import walk
 from PIL import Image
 import os, shutil, csv, random, magic, imghdr, sys, struct
 
-def img_size_type(fname):
+def img_size_type(fname, src_dir, dest_dir):
     '''Determine the image type of fhandle and return its size.
     from draco'''
-    im = Image.open(fname)
-    img_type = imghdr.what(base_dir + source_dir + j + '/' + name)
-    return im.size, img_type, im.format
+    im = Image.open(src_dir + fname)
+    im.load()
+    im.convert('RGB').save(dest_dir + fname + '.jpg', 'JPEG')
+    return im.size, im.format
 
 
 if len(sys.argv) == 1 or sys.argv[1] == 'clean':
@@ -53,7 +54,7 @@ if len(sys.argv) == 1 or sys.argv[1] == 'clean':
     source_dir = '/clean_data/'
     data_dir = '/learn'
     # 'ADULT', 'AD', 'ILLEGALITY', 'NORMAL', 'SEMI_ADULT', 'HATRED'
-    class_lst = ['ADULT', 'AD', 'ILLEGALITY', 'NORMAL', 'SEMI_ADULT', 'HATRED']
+    class_lst = ['AD', 'ILLEGALITY']
 
 
 elif sys.argv[1] == 'catdog':
@@ -88,6 +89,8 @@ for j in class_lst:
 
     print('Working on \t ' + j)
     
+    format_dic = dict()
+
     # randomly shffle the files and divide 
     dir_lst = os.listdir(base_dir + source_dir + j + '/')
     # random.shuffle(dir_lst)
@@ -97,21 +100,17 @@ for j in class_lst:
     for name in dir_lst[:num_file // 2]:
 
         try:
-            image_size, image_type, img_format = img_size_type(base_dir + source_dir + j + '/' + name)
-        except:
-            print('excepted', end = ' ')
+            image_size, img_format = img_size_type(name, 
+                base_dir + source_dir + j + '/',
+                base_dir + data_dir + '/train/' + j + '/')
+        except IOError:
+            # print('excepted', end = ' ')
             continue
         else:
             # Pass when the file type isn't supported by PIL 
             # Pass when image is smaller than input size (255, 255)
-            if ((image_type not in ['jpg', 'jpeg']) 
-                or (not ((256 < image_size[0]) and (256 < image_size[1])))
-                or img_format not in ['JPEG', 'JPG']):
+            if (not ((256 < image_size[0]) and (256 < image_size[1]))):
                 continue 
-
-        # Put the image in the directory
-        shutil.copyfile(base_dir + source_dir + j + '/' + name, 
-            base_dir + data_dir + '/train/'+ j + '/' + name + '.' + image_type)
         print('Working on \ttrain\t ' + j)   
 
 
@@ -119,23 +118,18 @@ for j in class_lst:
     for name in dir_lst[num_file // 2 + 1 : num_file]:
         
         try:
-            image_size, image_type, img_format = img_size_type(base_dir + source_dir + j + '/' + name)
-        except:
-            print('excepted', end = ' ')
+            image_size, img_format = img_size_type(name, 
+                base_dir + source_dir + j + '/',
+                base_dir + data_dir + '/val/' + j + '/')
+        except IOError:
+            # print('excepted', end = ' ')
             continue
         else:
             # Pass when the file type isn't supported by PIL 
             # Pass when image is smaller than input size (255, 255)
-            if ((image_type not in ['jpg', 'jpeg']) 
-                or (not ((256 < image_size[0]) and (256 < image_size[1])))
-                or img_format not in ['JPEG', 'JPG']):
+            if (not ((256 < image_size[0]) and (256 < image_size[1]))):
                 continue 
-
-        shutil.copyfile(base_dir + source_dir + j + '/' + name, 
-            base_dir + data_dir + '/val/' + j + '/' + name + '.' + image_type)
-        print('Working on \t' + data_dir + ' val\t ' + j)
-
-
+        print('Working on \tval\t ' + j)  
 
 
 

@@ -42,7 +42,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/testing/'
+data_dir = '/data/private/learn/'
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) 
