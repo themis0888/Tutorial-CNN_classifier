@@ -29,6 +29,7 @@ print('Hello! :D')
 
 data_transforms = {
     'train': transforms.Compose([
+        transforms.Resize(256),
         transforms.RandomResizedCrop(224),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
@@ -42,7 +43,8 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/hymen_test/'
+data_dir = '/data/private/learn10/'
+print('For %s'%data_dir)
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) 
@@ -155,33 +157,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
     model.load_state_dict(best_model_wts)
     return model
 
-"""
-# model definition 
-model_ft = models.resnet50(pretrained=True)
-num_ftrs = model_ft.fc.in_features
-model_ft.fc = nn.Linear(num_ftrs, 4)
-
-if use_gpu:
-    model_ft = model_ft.cuda()
-
-criterion = nn.CrossEntropyLoss()
-
-# Observe that all parameters are being optimized
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
-
-# Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-
-######################################################################
-# Train and evaluate
-
-model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
-
-# visualize_model(model_ft)
-
-# ConvNet as fixed feature extractor
-"""
 
 # Set the number of classes 
 num_class = sum(os.path.isdir(data_dir + '/train/' + i) for i in os.listdir(data_dir + '/train'))
@@ -194,10 +169,10 @@ if args.resume:
         os.mkdir('checkpoint')
     record_idx = 0
     mmdd = datetime.datetime.today().strftime('%m%d')
-    while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
+    while os.path.isfile('./checkpoint/' + mmdd + str('_%03d'%record_idx) + '.t7'):
         record_idx += 1
 
-    checkpoint = torch.load('./checkpoint/' + mmdd + str(record_idx-1) + '.t7')
+    checkpoint = torch.load('./checkpoint/' + mmdd + str('_%03d'%(record_idx - 1)) + '.t7')
 
     model_conv = checkpoint['net']
     start_epoch = checkpoint['epoch']
@@ -223,11 +198,18 @@ criterion = nn.CrossEntropyLoss()
 
 # Observe that only parameters of final layer are being optimized as
 # opoosed to before.
-optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.05, momentum=0.9)
+optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.1, momentum=0.9)
 
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=50, gamma=0.3)
 
+
 model_conv = train_model(model_conv, criterion, optimizer_conv,
                          exp_lr_scheduler, num_epochs=300, starting = start_epoch)
+
+
+
+
+
+
 
