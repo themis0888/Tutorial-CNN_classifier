@@ -18,12 +18,15 @@ import os
 import copy
 import datetime
 import argparse
+import sys
 
 plt.ion()   # interactive mode
 
 parser = argparse.ArgumentParser(description='Hello World? :D')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('filename', action='store', type=str)
 args = parser.parse_args()
+print(args)
 
 print('Hello! :D')
 
@@ -43,7 +46,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/learn10/'
+data_dir = '/data/private/learn/'
 print('For %s'%data_dir)
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
@@ -168,23 +171,28 @@ if args.resume:
     if not os.path.isdir('checkpoint'):
         os.mkdir('checkpoint')
     record_idx = 0
-    mmdd = datetime.datetime.today().strftime('%m%d')
-    while os.path.isfile('./checkpoint/' + mmdd + str('_%03d'%record_idx) + '.t7'):
-        record_idx += 1
+    if args.filename == '':
+        mmdd = datetime.datetime.today().strftime('%m%d')
+        while os.path.isfile('./checkpoint/' + mmdd + str('_%03d'%record_idx) + '.t7'):
+            record_idx += 1
 
-    checkpoint = torch.load('./checkpoint/' + mmdd + str('_%03d'%(record_idx - 1)) + '.t7')
+        checkpoint = torch.load('./checkpoint/' + mmdd + str('_%03d'%(record_idx - 1)) + '.t7')
+    else: 
+        checkpoint = torch.load('./checkpoint/' + args.filename)
 
     model_conv = checkpoint['net']
     start_epoch = checkpoint['epoch']
 
 else:
 
+    
     print("Model : %s" % cnn_model[idx])
     exec('model_conv = torchvision.models.' + cnn_model[idx] + '(pretrained=True)')
 
     for param in model_conv.parameters():
         param.requires_grad = False
     start_epoch = 0 
+    
 
 
 # Parameters of newly constructed modules have requires_grad=True by default
@@ -201,8 +209,9 @@ criterion = nn.CrossEntropyLoss()
 optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.1, momentum=0.9)
 
 # Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=50, gamma=0.3)
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=50, gamma=0.5)
 
+model_conv = nn.DataParallel(model_conv)
 
 model_conv = train_model(model_conv, criterion, optimizer_conv,
                          exp_lr_scheduler, num_epochs=300, starting = start_epoch)
