@@ -19,16 +19,19 @@ import copy
 import datetime
 import argparse
 import sys
+# import csv
 
 plt.ion()   # interactive mode
 
-parser = argparse.ArgumentParser(description='Hello World? :D')
-parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('filename', action='store', type=str)
+parser = argparse.ArgumentParser(description = 'Hello World? :D')
+parser.add_argument('--resume', '-r', action = 'store_true', help = 'resume from checkpoint')
+# parser.add_argument('filename', action='store', type = str)
+parser.add_argument('--test', '-t', action='store_true', help = 'go for test mode')
 args = parser.parse_args()
-print(args)
 
-print('Hello! :D')
+print('Hello! :D\n{}'.format(datetime.datetime.today()))
+
+
 
 data_transforms = {
     'train': transforms.Compose([
@@ -46,13 +49,14 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/learn/'
+data_dir = '/data/private/hymen_test/'
 print('For %s'%data_dir)
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) 
                   for x in ['train', 'val']}
 
+print('Folder Loaded \t[1/3]')
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=128,
                                              shuffle=True, num_workers=16)
               for x in ['train', 'val']}
@@ -60,7 +64,7 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 class_names = image_datasets['train'].classes
 
 
-print('Dataset Loaded')
+print('Dataset Loaded \t[2/3]')
 use_gpu = torch.cuda.is_available()
 
 
@@ -69,7 +73,6 @@ inputs, classes = next(iter(dataloaders['train']))
 
 # Make a grid from batch
 out = torchvision.utils.make_grid(inputs)
-
 
 def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, starting = 0):
     since = time.time()
@@ -81,13 +84,16 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
         os.mkdir('checkpoint')
     record_idx = 0
     mmdd = datetime.datetime.today().strftime('%m%d')
+
     while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
         record_idx += 1
+
+    # record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
 
     for epoch in range(num_epochs):
         print('Epoch {}'.format(starting + epoch))
         print('-' * 10)
-
+        idx = 0
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -113,9 +119,11 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
-
+                print('..')
                 # forward
                 outputs = model(inputs)
+                print('Show me the chicken wings!')
+                
                 _, preds = torch.max(outputs.data, 1)
                 loss = criterion(outputs, labels)
 
@@ -127,6 +135,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
                 # statistics
                 running_loss += loss.data[0] * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+
+                writer.writerows([idx, labels.data, preds])
+                idx += 1
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
@@ -145,6 +156,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
                     'acc': best_acc,
                     'epoch': epoch,
                     'time': datetime.datetime.now(),
+                    'data': data_dir,
+                    'class': os.listdir(data_dir + '/train'),
                 }
                 torch.save(state, './checkpoint/' + mmdd + str('_%03d'%record_idx) + '_temp.t7')
                 torch.save(state, './checkpoint/' + mmdd + str('_%03d'%record_idx) + '.t7')
@@ -158,6 +171,79 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
 
     # load best model weights
     model.load_state_dict(best_model_wts)
+    return model
+
+def test_model(model, criterion, optimizer, scheduler, num_epochs = 50, starting = 0):
+    since = time.time()
+
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
+
+    if not os.path.isdir('checkpoint'):
+        os.mkdir('checkpoint')
+    record_idx = 0
+    mmdd = datetime.datetime.today().strftime('%m%d')
+    while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
+        record_idx += 1
+
+    record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
+    with record_file:
+        writer = csv.writer(record_file)
+
+
+    
+    print('Epoch {}'.format(starting))
+    print('-' * 10)
+    idx = 0
+    # Each epoch has a training and validation phase
+    for phase in ['val']:
+        model.train(False)  # Set model to evaluate mode
+
+        running_loss = 0.0
+        running_corrects = 0
+
+        # Iterate over data.
+        for data in dataloaders[phase]:
+            # get the inputs
+            inputs, labels = data
+
+            # wrap them in Variable
+            if use_gpu:
+                inputs = Variable(inputs.cuda())
+                labels = Variable(labels.cuda())
+            else:
+                inputs, labels = Variable(inputs), Variable(labels)
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward
+            outputs = model(inputs)
+            _, preds = torch.max(outputs.data, 1)
+            loss = criterion(outputs, labels)
+
+            # statistics
+            running_loss += loss.data[0] * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+            if idx == 0:
+                print(preds, labels.data)
+            idx += 1
+            writer.writerows([idx, labels.data, preds])
+
+        epoch_loss = running_loss / dataset_sizes[phase]
+        epoch_acc = running_corrects / dataset_sizes[phase]
+
+        print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+            phase, epoch_loss, epoch_acc))
+
+        idx += 1
+
+
+    time_elapsed = time.time() - since
+    print('Training complete in {:.0f}m {:.0f}s'.format(
+        time_elapsed // 60, time_elapsed % 60))
+    print('Best val Acc: {:4f}'.format(best_acc))
+
     return model
 
 
@@ -212,10 +298,15 @@ optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.1, momentum=0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=50, gamma=0.5)
 
 model_conv = nn.DataParallel(model_conv)
+print('Model loaded \t[3/3]\n')
 
-model_conv = train_model(model_conv, criterion, optimizer_conv,
+if args.test:
+    print('{} \nLearning start'.format(datetime.datetime.today()))
+    test_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler)
+
+else:
+    model_conv = train_model(model_conv, criterion, optimizer_conv,
                          exp_lr_scheduler, num_epochs=300, starting = start_epoch)
-
 
 
 

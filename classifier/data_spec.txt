@@ -1,0 +1,38 @@
+22G	./AD
+4.0G	./HATRED
+65G	./ADULT
+14G	./TripleX_130k/train
+1.3G	./TripleX_130k/valid
+2.9G	./TripleX_130k/test
+18G	./TripleX_130k
+2.6G	./list
+291G	./MasterRoshi_600k/train
+15G	./MasterRoshi_600k/valid
+28G	./MasterRoshi_600k/test
+334G	./MasterRoshi_600k
+95M	./test
+72G	./SEMI_ADULT
+67G	./ILLEGALITY
+56G	./NORMAL
+640G	.
+
+ADULT 304995
+
+
+12G	./train/NORMAL
+11G	./train/SEMI_ADULT
+425M	./train/HATRED
+2.3G	./train/ILLEGALITY
+11G	./train/ADULT
+4.2G	./train/AD
+40G	./train
+12G	./val/NORMAL
+11G	./val/SEMI_ADULT
+428M	./val/HATRED
+4.2G	./val/AD
+2.3G	./val/ILLEGALITY
+11G	./val/ADULT
+41G	./val
+80G	.
+
+ADULT 141382
