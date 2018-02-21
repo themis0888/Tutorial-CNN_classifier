@@ -25,7 +25,7 @@ plt.ion()   # interactive mode
 
 parser = argparse.ArgumentParser(description = 'Hello World? :D')
 parser.add_argument('--resume', '-r', action = 'store_true', help = 'resume from checkpoint')
-# parser.add_argument('filename', action='store', type = str)
+parser.add_argument('filename', action='store', type = str)
 parser.add_argument('--test', '-t', action='store_true', help = 'go for test mode')
 args = parser.parse_args()
 
@@ -49,7 +49,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/hymen_test/'
+data_dir = '/data/private/learn10/'
 print('For %s'%data_dir)
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
@@ -88,7 +88,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
     while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
         record_idx += 1
 
-    # record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
+    record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
 
     for epoch in range(num_epochs):
         print('Epoch {}'.format(starting + epoch))
@@ -119,11 +119,9 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
-                print('..')
                 # forward
                 outputs = model(inputs)
-                print('Show me the chicken wings!')
-                
+
                 _, preds = torch.max(outputs.data, 1)
                 loss = criterion(outputs, labels)
 
@@ -136,11 +134,12 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
                 running_loss += loss.data[0] * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
 
-                writer.writerows([idx, labels.data, preds])
-                idx += 1
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
+            record_file.write('{}, {}, {}, '.format(epoch, epoch_acc, epoch_loss) 
+                + str(datetime.datetime.today()))
+            idx += 1
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
@@ -173,6 +172,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
     model.load_state_dict(best_model_wts)
     return model
 
+
 def test_model(model, criterion, optimizer, scheduler, num_epochs = 50, starting = 0):
     since = time.time()
 
@@ -185,11 +185,10 @@ def test_model(model, criterion, optimizer, scheduler, num_epochs = 50, starting
     mmdd = datetime.datetime.today().strftime('%m%d')
     while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
         record_idx += 1
-
+    while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.csv'):
+        record_idx += 1
     record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
-    with record_file:
-        writer = csv.writer(record_file)
-
+    print(record_idx)
 
     
     print('Epoch {}'.format(starting))
@@ -301,10 +300,10 @@ model_conv = nn.DataParallel(model_conv)
 print('Model loaded \t[3/3]\n')
 
 if args.test:
-    print('{} \nLearning start'.format(datetime.datetime.today()))
     test_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler)
 
 else:
+    print('{} \nLearning start'.format(datetime.datetime.today()))
     model_conv = train_model(model_conv, criterion, optimizer_conv,
                          exp_lr_scheduler, num_epochs=300, starting = start_epoch)
 
