@@ -49,7 +49,7 @@ data_transforms = {
     ]),
 }
 
-data_dir = '/data/private/learn10/'
+data_dir = '/data/private/learn3/'
 print('For %s'%data_dir)
 
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
@@ -86,6 +86,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
     mmdd = datetime.datetime.today().strftime('%m%d')
 
     while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.t7'):
+        record_idx += 1
+    while os.path.isfile('./checkpoint/' + mmdd + str(record_idx) + '.csv'):
         record_idx += 1
 
     record_file = open('./checkpoint/' + mmdd + str(record_idx) + '.csv', 'w')
@@ -137,7 +139,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs = 50, startin
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects / dataset_sizes[phase]
-            record_file.write('{}, {}, {}, '.format(epoch, epoch_acc, epoch_loss) 
+            record_file.write('{}, {}, {} \n'.format(epoch, epoch_acc, epoch_loss) 
                 + str(datetime.datetime.today()))
             idx += 1
 
